@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProjectFlow - Login</title>
+    <style>
+        /* (Keep your existing CSS variables and layout styles here) */
+        :root { --primary: #6366f1; --primary-hover: #4f46e5; --surface: #ffffff; --background: #f8fafc; --text-main: #0f172a; --text-muted: #64748b; --border: #e2e8f0; }
+        [data-theme="dark"] { --surface: #1e293b; --background: #0f172a; --text-main: #f8fafc; --text-muted: #94a3b8; --border: #334155; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; transition: background-color 0.3s, color 0.3s; }
+        body { display: flex; min-height: 100vh; background-color: var(--background); color: var(--text-main); }
+        .split-layout { display: flex; width: 100%; }
+        .left-pane { flex: 1; background: linear-gradient(135deg, var(--primary), #a855f7); color: white; padding: 4rem; display: flex; flex-direction: column; justify-content: center; }
+        .left-pane h1 { font-size: 3rem; margin-bottom: 1.5rem; line-height: 1.2; }
+        .left-pane p { font-size: 1.25rem; opacity: 0.9; }
+        .right-pane { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 2rem; position: relative; }
+        .theme-toggle { position: absolute; top: 2rem; right: 2rem; background: var(--surface); border: 1px solid var(--border); color: var(--text-main); padding: 0.5rem 1rem; border-radius: 999px; cursor: pointer; font-weight: 600; }
+        .auth-container { background: var(--surface); padding: 3rem; border-radius: 1rem; border: 1px solid var(--border); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); width: 100%; max-width: 450px; }
+        .auth-container h2 { margin-bottom: 0.5rem; font-size: 2rem; }
+        .auth-container p.subtitle { color: var(--text-muted); margin-bottom: 2rem; }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.875rem; }
+        .form-group input { width: 100%; padding: 0.875rem; border: 1px solid var(--border); border-radius: 0.5rem; background: var(--background); color: var(--text-main); outline: none; }
+        .btn-primary { width: 100%; background: var(--primary); color: white; border: none; padding: 0.875rem; border-radius: 0.5rem; cursor: pointer; font-weight: 600; margin-top: 1rem; }
+        .btn-primary:hover { background: var(--primary-hover); }
+        .auth-footer { text-align: center; margin-top: 2rem; font-size: 0.9rem; color: var(--text-muted); }
+        .auth-footer a { color: var(--primary); text-decoration: none; font-weight: 600; }
+        
+        /* NEW STYLES FOR GOOGLE BUTTON & DIVIDER */
+        .divider { display: flex; align-items: center; text-align: center; margin: 1.5rem 0; color: var(--text-muted); font-size: 0.875rem; }
+        .divider::before, .divider::after { content: ''; flex: 1; border-bottom: 1px solid var(--border); }
+        .divider:not(:empty)::before { margin-right: .5em; }
+        .divider:not(:empty)::after { margin-left: .5em; }
+        
+        .btn-google { width: 100%; background: var(--surface); color: var(--text-main); border: 1px solid var(--border); padding: 0.875rem; border-radius: 0.5rem; cursor: pointer; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 0.75rem; transition: background 0.2s; }
+        .btn-google:hover { background: var(--background); }
+        .btn-google img { width: 20px; height: 20px; }
+        
+        #errorMessage { color: var(--danger, red); font-size: 0.875rem; margin-top: 1rem; text-align: center; display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="split-layout">
+        <div class="left-pane">
+            <h1>Manage your projects brilliantly.</h1>
+            <p>Join thousands of teams using ProjectFlow.</p>
+        </div>
+
+        <div class="right-pane">
+            <button class="theme-toggle" onclick="toggleTheme()"><span id="theme-icon">🌙</span></button>
+
+            <div class="auth-container">
+                <h2>Welcome back</h2>
+                <p class="subtitle">Please enter your details to sign in.</p>
+
+                <!-- NEW: Google Login Button -->
+                <button id="googleBtn" class="btn-google">
+                    <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google Logo">
+                    Continue with Google
+                </button>
+
+                <div class="divider">OR</div>
+
+                <!-- UPDATED: Form now uses JS, not action="app.html" -->
+                <form id="loginForm">
+                    <div class="form-group">
+                        <div class="form-group">
+    <label for="email">Email or Username</label>
+    <input type="text" id="email" placeholder="you@company.com or username123" required>
+</div>
+                        <input type="email" id="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" required>
+                    </div>
+                    <button type="submit" class="btn-primary" id="loginBtn">Log In</button>
+                    <div id="errorMessage"></div>
+                </form>
+
+                <div class="auth-footer">
+                    Don't have an account? <a href="signup.html">Sign up here</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Theme Script (Keep as is) -->
+    <script>
+        function applyTheme(theme) { document.documentElement.setAttribute('data-theme', theme); localStorage.setItem('theme', theme); }
+        function toggleTheme() { applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'); }
+        applyTheme(localStorage.getItem('theme') || 'light');
+    </script>
+
+    <!-- FIREBASE REAL-TIME LOGIC -->
+    <script type="module">
+        // 1. Import Firebase functions
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        // 2. PASTE YOUR CONFIG HERE (From Firebase Console)
+        const firebaseConfig = {
+    apiKey: "AIzaSyCJOsM-JHKjuxzdMZyIDF8nLo82Fz38RHs",
+    authDomain: "ethara-4cc12.firebaseapp.com",
+    projectId: "ethara-4cc12",
+    storageBucket: "ethara-4cc12.firebasestorage.app",
+    messagingSenderId: "472172201686",
+    appId: "1:472172201686:web:d13a605febaf571839ab77",
+    measurementId: "G-JHQ3DH77L2"
+  };
+
+        // 3. Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+
+        const loginForm = document.getElementById('loginForm');
+        const googleBtn = document.getElementById('googleBtn');
+        const errorDiv = document.getElementById('errorMessage');
+        const loginBtn = document.getElementById('loginBtn');
+
+        // 4. Handle Email/Password Login
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const loginInput = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            
+            loginBtn.innerText = "Logging in...";
+            errorDiv.style.display = "none";
+
+            let emailToUse = loginInput;
+
+            try {
+                // 1. Check if input is a Username (doesn't contain @)
+                if (!loginInput.includes('@')) {
+                    const response = await fetch(`http://localhost:8000/users/resolve/${loginInput}`);
+                    if (!response.ok) {
+                        throw new Error("Username not found.");
+                    }
+                    const data = await response.json();
+                    emailToUse = data.email; // We found the real email!
+                }
+
+                // 2. Log into Firebase using the resolved email
+                await signInWithEmailAndPassword(auth, emailToUse, password);
+                window.location.href = "app.html";
+
+            } catch (error) {
+                loginBtn.innerText = "Log In";
+                // Show clean error messages
+                if (error.message === "Username not found.") {
+                    errorDiv.innerText = error.message;
+                } else {
+                    errorDiv.innerText = "Invalid credentials. Please try again.";
+                }
+                errorDiv.style.display = "block";
+            }
+        });
+
+        // 5. Handle Google Login
+        googleBtn.addEventListener('click', () => {
+            googleBtn.innerText = "Connecting...";
+            
+            signInWithPopup(auth, provider)
+                .then((result) => {
+                    // Success! Redirect to app.
+                    window.location.href = "app.html";
+                }).catch((error) => {
+                    googleBtn.innerHTML = `<img src="https://www.svgrepo.com/show/475656/google-color.svg"> Continue with Google`;
+                    errorDiv.innerText = error.message;
+                    errorDiv.style.display = "block";
+                });
+        });
+    </script>
+</body>
+</html>
