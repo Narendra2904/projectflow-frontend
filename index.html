@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProjectFlow - Modern Workspace</title>
+    <style>
+        :root { 
+            --primary: #6366f1; --primary-hover: #4f46e5; --primary-light: #e0e7ff;
+            --surface: #ffffff; --background: #f8fafc;
+            --text-main: #0f172a; --text-muted: #64748b;
+            --border: #e2e8f0; 
+            --danger: #ef4444; --danger-bg: #fee2e2; 
+            --success: #10b981; --success-bg: #d1fae5; 
+            --warning: #f59e0b; --warning-bg: #fef3c7;
+            --radius-lg: 1.25rem; --radius-md: 0.875rem;
+            --shadow-soft: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+        }
+
+        [data-theme="dark"] {
+            --primary-light: rgba(99, 102, 241, 0.2);
+            --surface: #1e293b; --background: #0f172a;
+            --text-main: #f8fafc; --text-muted: #94a3b8;
+            --border: #334155;
+            --danger-bg: rgba(239, 68, 68, 0.1);
+            --success-bg: rgba(16, 185, 129, 0.1);
+            --warning-bg: rgba(245, 158, 11, 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
+        body { background-color: var(--background); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
+        
+        aside { width: 260px; background: var(--surface); margin: 1rem; border-radius: var(--radius-lg); padding: 1.5rem; display: flex; flex-direction: column; z-index: 10; box-shadow: var(--shadow-soft); justify-content: space-between; border: 1px solid var(--border); }
+        aside h2 { font-size: 1.5rem; background: linear-gradient(135deg, var(--primary), #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 2.5rem; font-weight: 800; }
+        .nav-link { display: flex; align-items: center; padding: 0.875rem 1rem; color: var(--text-muted); text-decoration: none; border-radius: var(--radius-md); margin-bottom: 0.5rem; cursor: pointer; transition: all 0.2s ease; font-weight: 500; }
+        .nav-link:hover { background: var(--primary-light); color: var(--primary); transform: translateX(4px); }
+        .nav-link.active { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
+        .logout-link { color: var(--danger); margin-top: auto; border-top: 1px dashed var(--border); padding-top: 1rem; }
+        
+        main { flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 1rem 2rem 1rem 1rem; }
+        header { padding: 1rem 0 2rem 0; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 5; background: var(--background); }
+        header h3 { font-size: 1.75rem; font-weight: 700; color: var(--text-main); }
+        .header-controls { display: flex; gap: 1.5rem; align-items: center; }
+        .theme-toggle { background: var(--surface); border: 1px solid var(--border); color: var(--text-main); padding: 0.5rem 1rem; border-radius: 999px; cursor: pointer; font-weight: 600; font-size: 0.875rem; }
+
+        .view-section { display: none; animation: slideUp 0.4s ease; }
+        .view-section.active { display: block; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .bento-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 1.5rem; }
+        .bento-card { background: var(--surface); padding: 1.5rem; border-radius: var(--radius-lg); box-shadow: var(--shadow-soft); border: 1px solid var(--border); display: flex; flex-direction: column; }
+        
+        .card-welcome { grid-column: span 8; background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); color: white; }
+        .card-stat { grid-column: span 4; justify-content: center; }
+        .card-stat h4 { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.5rem; }
+        .card-stat .value { font-size: 2.5rem; font-weight: 800; }
+        
+        .profile-img-container { position: relative; width: 120px; height: 120px; margin: 0 auto 1rem; }
+        .profile-img-container img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; border: 4px solid var(--background); }
+        .profile-img-btn { position: absolute; bottom: 0; right: 0; background: var(--primary); color: white; border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; }
+        
+        .form-group { margin-bottom: 1.25rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 600; color: var(--text-muted); }
+        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 0.75rem; background: var(--background); border: 1px solid var(--border); color: var(--text-main); border-radius: 0.5rem; outline: none; font-family: 'Inter', sans-serif;}
+        .btn-save { background: var(--primary); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 600; cursor: pointer; margin-top: 1rem; transition: 0.2s;}
+        .btn-save:hover { background: var(--primary-hover); }
+
+        .chat-layout { display: flex; gap: 1.5rem; height: 70vh; }
+        .chat-sidebar { width: 300px; background: var(--surface); border-radius: var(--radius-lg); border: 1px solid var(--border); overflow-y: auto; padding: 1rem; }
+        .chat-friend-btn { display: flex; align-items: center; gap: 1rem; width: 100%; padding: 0.75rem; border: none; background: transparent; cursor: pointer; border-radius: 0.5rem; text-align: left; transition: 0.2s; }
+        .chat-friend-btn:hover, .chat-friend-btn.active { background: var(--background); }
+        .chat-friend-btn img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+        
+        .chat-window { flex: 1; background: var(--surface); border-radius: var(--radius-lg); border: 1px solid var(--border); display: flex; flex-direction: column; }
+        .chat-header { padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); font-weight: 700; }
+        .chat-history { flex: 1; padding: 1.5rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; background: var(--background); }
+        .chat-bubble { max-width: 70%; padding: 0.75rem 1rem; border-radius: 1rem; font-size: 0.95rem; line-height: 1.4; }
+        .chat-bubble.received { background: var(--surface); border: 1px solid var(--border); align-self: flex-start; border-bottom-left-radius: 0.25rem; }
+        .chat-bubble.sent { background: var(--primary); color: white; align-self: flex-end; border-bottom-right-radius: 0.25rem; }
+        
+        .chat-input-area { padding: 1rem; border-top: 1px solid var(--border); display: flex; gap: 0.5rem; }
+        .chat-input-area input { flex: 1; padding: 0.75rem 1rem; border: 1px solid var(--border); border-radius: 999px; background: var(--background); color: var(--text-main); outline: none; }
+        .chat-input-area button { background: var(--primary); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 999px; cursor: pointer; font-weight: 600; }
+
+        .noti-item { padding: 1rem; border-bottom: 1px solid var(--border); transition: 0.2s; cursor: pointer;}
+        .noti-item:hover { background: var(--background); }
+        .noti-actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+        .btn-small { padding: 0.3rem 0.8rem; border-radius: 0.4rem; border: none; cursor: pointer; font-size: 0.8rem; font-weight: 600;}
+    </style>
+</head>
+<body>
+
+    <aside>
+        <div>
+            <h2>ProjectFlow</h2>
+            <nav id="mainNav">
+                <a class="nav-link active" onclick="switchView('dashboard', this)">📊 Dashboard</a>
+                <a class="nav-link" onclick="switchView('projects', this)">📋 Projects & Tasks</a> 
+                <a class="nav-link" onclick="switchView('team', this)">👥 Team & Groups</a>
+                <a class="nav-link" id="nav-messages" onclick="switchView('messages', this)">💬 Messages</a>
+                <a class="nav-link" onclick="switchView('profile', this)">⚙️ Profile</a>
+            </nav>
+        </div>
+        <a href="#" class="nav-link logout-link" onclick="handleLogout(event)">🚪 Log Out</a>
+    </aside>
+
+    <main>
+        <header>
+            <h3 id="currentViewTitle">Overview</h3>
+            <div class="header-controls">
+                
+                <div style="position: relative;">
+                    <button class="theme-toggle" onclick="toggleNotiDropdown()" style="padding: 0.5rem 0.8rem; position: relative;">
+                        🔔 <span id="notiBadge" style="display:none; position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 0.7rem; align-items: center; justify-content: center;">0</span>
+                    </button>
+                    <div id="notiDropdown" style="display: none; position: absolute; right: 0; top: 130%; width: 320px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-soft); z-index: 1000; max-height: 400px; overflow-y: auto;">
+                        <div style="padding: 1rem; border-bottom: 1px solid var(--border); font-weight: bold; background: var(--background); border-radius: var(--radius-lg) var(--radius-lg) 0 0;">Notifications</div>
+                        <div id="notiContent">
+                            <div style="padding: 1.5rem; text-align: center; color: var(--text-muted); font-size: 0.9rem;">No new notifications</div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="theme-toggle" onclick="toggleTheme()"><span id="theme-icon">🌙</span> Dark Mode</button>
+                <img id="headerAvatar" src="https://ui-avatars.com/api/?name=User" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+            </div>
+        </header>
+
+        <div id="view-dashboard" class="view-section active">
+            <div class="bento-grid">
+                <div class="bento-card card-welcome">
+                    <h2 id="welcomeText">Good morning! 👋</h2>
+                    <p>You have pending tasks to review today. Let's get things moving.</p>
+                </div>
+                <div class="bento-card card-stat"><h4>Active Projects</h4><div class="value" id="kpi-projects">-</div></div>
+                <div class="bento-card card-stat"><h4>Pending Tasks</h4><div class="value" id="kpi-tasks">-</div></div>
+            </div>
+        </div>
+
+        <div id="view-profile" class="view-section">
+            <div class="bento-grid">
+                <div class="bento-card" style="grid-column: span 4; text-align: center;">
+                    <div class="profile-img-container">
+                        <img id="profileAvatarMain" src="https://ui-avatars.com/api/?name=User">
+                        <input type="file" id="imageUpload" accept="image/*" style="display: none;" onchange="updateProfileImage(event)">
+                        <button class="profile-img-btn" id="uploadBtn" onclick="document.getElementById('imageUpload').click()">📷</button>
+                    </div>
+                    <h3 id="profileHeaderName">User</h3>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">Team Member</p>
+                </div>
+
+                <div class="bento-card" style="grid-column: span 8;">
+                    <h3 style="margin-bottom: 1rem;">Personal Information</h3>
+                    <form onsubmit="event.preventDefault(); saveProfileInfo(event);">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div class="form-group"><label>First Name</label><input type="text" id="inputFirstName" required></div>
+                            <div class="form-group"><label>Last Name</label><input type="text" id="inputLastName"></div>
+                        </div>
+                        <div class="form-group">
+                            <label>Username (Unique)</label>
+                            <input type="text" id="inputUsername" placeholder="your_unique_username" required>
+                        </div>
+                        <div class="form-group"><label>Email Address</label><input type="email" id="inputEmail" disabled></div>
+                        <button type="submit" class="btn-save" id="saveProfileBtn">Save Changes</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-projects" class="view-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2>Project & Task Management</h2>
+            </div>
+            
+            <div class="bento-grid">
+                <div class="bento-card" style="grid-column: span 4; max-height: 70vh; overflow-y: auto;">
+                    <h3 style="margin-bottom: 1rem;">Projects</h3>
+                    
+                    <form id="createProjectForm" onsubmit="event.preventDefault(); handleCreateProject(event);" style="margin-bottom: 1.5rem; padding: 1rem; background: var(--background); border-radius: var(--radius-md);">
+                        <input type="text" id="newProjectTitle" placeholder="New Project Title" required style="width: 100%; padding: 0.5rem; margin-bottom: 0.5rem; border: 1px solid var(--border); border-radius: 0.25rem; outline: none; background: var(--surface); color: var(--text-main);">
+                        <textarea id="newProjectDesc" placeholder="Description" style="width: 100%; padding: 0.5rem; margin-bottom: 0.5rem; border: 1px solid var(--border); border-radius: 0.25rem; outline: none; background: var(--surface); color: var(--text-main);"></textarea>
+                        <button type="submit" class="btn-save" style="width: 100%; padding: 0.5rem; margin: 0; font-size: 0.85rem;">Create Project</button>
+                    </form>
+                    
+                    <div id="projectsListContainer" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        <p style="color: var(--text-muted); font-size: 0.9rem;">Loading projects...</p>
+                    </div>
+                </div>
+
+                <div class="bento-card" style="grid-column: span 8; max-height: 70vh; display: flex; flex-direction: column;">
+                    
+                    <div style="background: var(--background); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1rem;">
+                        <h4 style="margin-bottom: 0.75rem; font-size: 0.9rem;">Create New Task</h4>
+                        <form id="createTaskForm" onsubmit="event.preventDefault(); handleCreateTask(event);" style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+                            <select id="newTaskProject" required style="padding: 0.5rem; border: 1px solid var(--border); border-radius: 0.25rem; background: var(--surface); color: var(--text-main); flex: 1; min-width: 150px;">
+                                <option value="" disabled selected>Select a Project</option>
+                            </select>
+                            <input type="text" id="newTaskTitle" placeholder="Task Title" required style="padding: 0.5rem; border: 1px solid var(--border); border-radius: 0.25rem; background: var(--surface); color: var(--text-main); flex: 2; min-width: 200px;">
+                            <input type="date" id="newTaskDueDate" title="Due Date" style="padding: 0.5rem; border: 1px solid var(--border); border-radius: 0.25rem; background: var(--surface); color: var(--text-main); flex: 1;">
+                            <button type="submit" class="btn-save" style="margin: 0; padding: 0.5rem 1rem; font-size: 0.85rem;">Add Task</button>
+                        </form>
+                    </div>
+
+                    <div style="display: flex; gap: 1rem; flex: 1; overflow-x: auto;">
+                        <div style="flex: 1; min-width: 200px; background: var(--background); border-radius: var(--radius-md); padding: 1rem; display: flex; flex-direction: column;">
+                            <h4 style="margin-bottom: 1rem; color: var(--text-muted); font-size: 0.85rem;">TODO</h4>
+                            <div id="tasks-TODO" style="flex: 1; display: flex; flex-direction: column; gap: 0.5rem; overflow-y: auto;"></div>
+                        </div>
+                        <div style="flex: 1; min-width: 200px; background: var(--background); border-radius: var(--radius-md); padding: 1rem; display: flex; flex-direction: column;">
+                            <h4 style="margin-bottom: 1rem; color: var(--warning); font-size: 0.85rem;">IN PROGRESS</h4>
+                            <div id="tasks-IN_PROGRESS" style="flex: 1; display: flex; flex-direction: column; gap: 0.5rem; overflow-y: auto;"></div>
+                        </div>
+                        <div style="flex: 1; min-width: 200px; background: var(--background); border-radius: var(--radius-md); padding: 1rem; display: flex; flex-direction: column;">
+                            <h4 style="margin-bottom: 1rem; color: var(--success); font-size: 0.85rem;">DONE</h4>
+                            <div id="tasks-DONE" style="flex: 1; display: flex; flex-direction: column; gap: 0.5rem; overflow-y: auto;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-team" class="view-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2>Team & Groups</h2>
+            </div>
+            
+            <div class="bento-grid">
+                <div class="bento-card" style="grid-column: span 6; max-height: 70vh; overflow-y: auto;">
+                    <h3 style="margin-bottom: 1rem;">Find Teammates</h3>
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+                        <input type="text" id="userSearchInput" placeholder="Search by username..." style="flex: 1; padding: 0.6rem 1rem; border-radius: 0.5rem; border: 1px solid var(--border); background: var(--background); color: var(--text-main); outline: none;">
+                        <button class="btn-save" onclick="triggerUserSearch()" style="margin-top: 0; padding: 0.6rem 1.2rem;">Search</button>
+                    </div>
+                    <div id="teamDirectoryContainer" style="display: flex; flex-direction: column; gap: 1rem;">
+                        <div style="text-align: center; color: var(--text-muted);">Search for real users by their username.</div>
+                    </div>
+                </div>
+
+                <div class="bento-card" style="grid-column: span 6; max-height: 70vh; overflow-y: auto;">
+                    <h3 style="margin-bottom: 1rem;">Workspaces & Groups</h3>
+                    
+                    <form onsubmit="event.preventDefault(); createGroup(event);" style="padding: 1rem; background: var(--background); border-radius: var(--radius-md); margin-bottom: 1rem;">
+                        <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--text-muted);">Create New Group</h4>
+                        <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                            <input type="text" id="createGroupName" placeholder="Group Name" required style="flex: 1; padding: 0.5rem; border: 1px solid var(--border); border-radius: 0.25rem; background: var(--surface); color: var(--text-main);">
+                            <input type="password" id="createGroupPass" placeholder="Set Password" required style="width: 120px; padding: 0.5rem; border: 1px solid var(--border); border-radius: 0.25rem; background: var(--surface); color: var(--text-main);">
+                        </div>
+                        <button type="submit" class="btn-save" style="width: 100%; margin: 0; padding: 0.5rem; font-size: 0.85rem;">+ Create Group</button>
+                    </form>
+
+                    <form onsubmit="event.preventDefault(); joinGroup(event);" style="padding: 1rem; background: var(--background); border-radius: var(--radius-md); margin-bottom: 1rem;">
+                        <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--text-muted);">Join Existing Group</h4>
+                        <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                            <input type="number" id="joinGroupId" placeholder="Group ID" required style="flex: 1; padding: 0.5rem; border: 1px solid var(--border); border-radius: 0.25rem; background: var(--surface); color: var(--text-main);">
+                            <input type="password" id="joinGroupPass" placeholder="Group Password" required style="width: 120px; padding: 0.5rem; border: 1px solid var(--border); border-radius: 0.25rem; background: var(--surface); color: var(--text-main);">
+                        </div>
+                        <button type="submit" class="btn-save" style="width: 100%; margin: 0; padding: 0.5rem; font-size: 0.85rem; background: var(--success);">Join Group</button>
+                    </form>
+
+                    <h4 style="font-size: 0.9rem; margin: 1.5rem 0 0.5rem; color: var(--text-muted);">My Active Groups</h4>
+                    <div id="myGroupsList" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        <p style="color: var(--text-muted); font-size: 0.85rem;">Loading groups...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-messages" class="view-section">
+            <div class="chat-layout">
+                <div class="chat-sidebar">
+                    <h3 style="margin-bottom: 1rem; font-size: 1.1rem;">Your Teammates</h3>
+                    <div id="chatFriendsList">
+                        <p style="color: var(--text-muted); font-size: 0.9rem;">Loading friends...</p>
+                    </div>
+                </div>
+
+                <div class="chat-window">
+                    <div class="chat-header" id="chatActiveName">Select a teammate to start chatting</div>
+                    <div class="chat-history" id="chatHistoryBox"></div>
+                    
+                    <div class="chat-input-area">
+                        <input type="text" id="chatMessageInput" placeholder="Type a message..." onkeypress="handleEnter(event)" disabled>
+                        <button type="button" id="chatSendBtn" onclick="sendChatMessage()" disabled>Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function applyTheme(theme) { document.documentElement.setAttribute('data-theme', theme); document.getElementById('theme-icon').textContent = theme === 'dark' ? '☀️' : '🌙'; localStorage.setItem('theme', theme); }
+        function toggleTheme() { applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'); }
+        applyTheme(localStorage.getItem('theme') || 'light');
+    </script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        // YOUR FIREBASE CONFIG
+        const firebaseConfig = {
+            apiKey: "AIzaSyCJOsM-JHKjuxzdMZyIDF8nLo82Fz38RHs",
+            authDomain: "ethara-4cc12.firebaseapp.com",
+            projectId: "ethara-4cc12",
+            storageBucket: "ethara-4cc12.firebasestorage.app",
+            messagingSenderId: "472172201686",
+            appId: "1:472172201686:web:d13a605febaf571839ab77"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        
+        let currentChatUserId = null; 
+        let chatPollInterval = null; 
+        let notiPollInterval = null;
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const nameParts = (user.displayName || "User").split(" ");
+                const firstName = nameParts[0];
+                
+                document.getElementById('inputFirstName').value = firstName;
+                document.getElementById('inputLastName').value = nameParts.slice(1).join(" ");
+                document.getElementById('inputEmail').value = user.email || "";
+                
+                const photo = user.photoURL || `https://ui-avatars.com/api/?name=${firstName}&background=6366f1&color=fff`;
+                document.getElementById('headerAvatar').src = photo;
+                document.getElementById('profileAvatarMain').src = photo;
+
+                // Time-based Greeting
+                const currentHour = new Date().getHours();
+                let greeting = "Good evening"; 
+                if (currentHour >= 5 && currentHour < 12) greeting = "Good morning";
+                else if (currentHour >= 12 && currentHour < 18) greeting = "Good afternoon";
+                document.getElementById('welcomeText').innerText = `${greeting}, ${firstName}! 👋`;
+
+                try {
+                    const token = await user.getIdToken();
+                    
+                    // Fetch SQL Profile
+                    const res = await fetch("http://localhost:8000/users/me", { headers: { "Authorization": `Bearer ${token}` } });
+                    if (res.ok) {
+                        const data = await res.json();
+                        document.getElementById('inputUsername').value = data.username || "";
+                        document.getElementById('profileHeaderName').innerText = `${data.name} (@${data.username})`;
+                    }
+                    
+                    // Fetch Dashboard KPIs
+                    const kpiRes = await fetch("http://localhost:8000/dashboard/kpis", { headers: { "Authorization": `Bearer ${token}` } });
+                    if (kpiRes.ok) {
+                        const kpis = await kpiRes.json();
+                        document.getElementById('kpi-projects').innerText = kpis.active_projects;
+                        document.getElementById('kpi-tasks').innerText = kpis.pending_tasks;
+                    }
+
+                    // Start Notifications
+                    fetchNotifications();
+                    notiPollInterval = setInterval(fetchNotifications, 5000);
+
+                } catch (err) { console.error(err); }
+            } else {
+                window.location.href = "login.html";
+            }
+        });
+
+        // Navigation
+        window.switchView = function(viewId, element) {
+            document.querySelectorAll('.view-section, .nav-link').forEach(el => el.classList.remove('active'));
+            document.getElementById('view-' + viewId).classList.add('active');
+            if(element) element.classList.add('active');
+            else if(viewId === 'messages') document.getElementById('nav-messages').classList.add('active');
+            
+            const titles = { 'dashboard': 'Overview', 'projects': 'Project & Task Management', 'team': 'Team & Groups', 'messages': 'Messages', 'profile': 'My Profile' };
+            document.getElementById('currentViewTitle').innerText = titles[viewId];
+
+            if (viewId === 'messages') loadChatFriends();
+            if (viewId === 'projects') loadProjectsAndTasks();
+            if (viewId === 'team') loadMyGroups();
+            if (viewId !== 'messages' && chatPollInterval) clearInterval(chatPollInterval);
+        };
+
+        // --- GROUPS LOGIC ---
+        window.loadMyGroups = async function() {
+            try {
+                const token = await auth.currentUser.getIdToken();
+                const res = await fetch("http://localhost:8000/groups", { headers: { "Authorization": `Bearer ${token}` } });
+                const groups = await res.json();
+                
+                const list = document.getElementById('myGroupsList');
+                if (groups.length === 0) {
+                    list.innerHTML = '<p style="color: var(--text-muted); font-size: 0.85rem;">You are not in any groups.</p>';
+                    return;
+                }
+                
+                let html = '';
+                groups.forEach(g => {
+                    html += `
+                        <div style="padding: 0.75rem; border: 1px solid var(--border); border-radius: 0.4rem; background: var(--surface);">
+                            <div style="font-weight: 600; font-size: 0.9rem; color: var(--primary);">${g.name}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">Group ID: <strong>${g.id}</strong></div>
+                        </div>
+                    `;
+                });
+                list.innerHTML = html;
+            } catch(e) { console.error(e); }
+        };
+
+        window.createGroup = async function(e) {
+            const name = document.getElementById('createGroupName').value;
+            const pass = document.getElementById('createGroupPass').value;
+            try {
+                const token = await auth.currentUser.getIdToken();
+                const res = await fetch("http://localhost:8000/groups", {
+                    method: "POST", headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: name, password: pass })
+                });
+                const group = await res.json();
+                alert(`Group Created! Share this Group ID with others so they can join: ${group.id}`);
+                e.target.reset();
+                loadMyGroups();
+            } catch(err) { alert("Failed to create group."); }
+        };
+
+        window.joinGroup = async function(e) {
+            const id = document.getElementById('joinGroupId').value;
+            const pass = document.getElementById('joinGroupPass').value;
+            try {
+                const token = await auth.currentUser.getIdToken();
+                const res = await fetch("http://localhost:8000/groups/join", {
+                    method: "POST", headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+                    body: JSON.stringify({ group_id: parseInt(id), password: pass })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.detail);
+                alert("Successfully joined the group!");
+                e.target.reset();
+                loadMyGroups();
+            } catch(err) { alert(err.message); }
+        };
+
+
+        // --- PROJECTS & TASKS LOGIC ---
+        window.loadProjectsAndTasks = async function() {
+            try {
+                const token = await auth.currentUser.getIdToken();
+                
+                // Fetch Projects
+                const projRes = await fetch("http://localhost:8000/projects", { headers: { "Authorization": `Bearer ${token}` } });
+                const projects = await projRes.json();
+                window.currentProjects = projects; 
+                
+                const pContainer = document.getElementById('projectsListContainer');
+                const projectSelect = document.getElementById('newTaskProject');
+                
+                pContainer.innerHTML = projects.length === 0 ? '<p style="color: var(--text-muted); font-size: 0.9rem;">No active projects.</p>' : '';
+                projectSelect.innerHTML = '<option value="" disabled selected>Select a Project</option>';
+                
+                projects.forEach(p => {
+                    pContainer.innerHTML += `
+                        <div style="padding: 1rem; border: 1px solid var(--border); border-radius: 0.5rem; background: var(--surface);">
+                            <div style="display: flex; justify-content: space-between;">
+                                <strong style="color: var(--primary); font-size: 0.9rem;">${p.title}</strong>
+                                <button onclick="deleteProject(${p.id})" style="color: var(--danger); background: none; border: none; cursor: pointer;" title="Delete Project">🗑️</button>
+                            </div>
+                            <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">${p.description || "No description"}</p>
+                        </div>
+                    `;
+                    projectSelect.innerHTML += `<option value="${p.id}">${p.title}</option>`;
+                });
+
+                // Fetch Kanban Tasks
+                const taskRes = await fetch("http://localhost:8000/tasks", { headers: { "Authorization": `Bearer ${token}` } });
+                const tasks = await taskRes.json();
+                
+                document.getElementById('tasks-TODO').innerHTML = '';
+                document.getElementById('tasks-IN_PROGRESS').innerHTML = '';
+                document.getElementById('tasks-DONE').innerHTML = '';
+
+                const now = new Date();
+
+                tasks.forEach(t => {
+                    const col = document.getElementById(`tasks-${t.status}`);
+                    if(!col) return;
+                    
+                    const parentProj = window.currentProjects.find(p => p.id === t.project_id);
+                    const projBadge = parentProj ? `<span style="font-size: 0.65rem; background: var(--primary-light); color: var(--primary); padding: 0.2rem 0.4rem; border-radius: 4px; margin-bottom: 0.5rem; display: inline-block;">${parentProj.title}</span>` : '';
+                    
+                    let dateBadge = '';
+                    if (t.due_date) {
+                        const dueDate = new Date(t.due_date);
+                        const isOverdue = dueDate < now && t.status !== 'DONE';
+                        const dateColor = isOverdue ? 'var(--danger)' : 'var(--text-muted)';
+                        const dateBg = isOverdue ? 'var(--danger-bg)' : 'var(--background)';
+                        dateBadge = `<div style="font-size: 0.7rem; color: ${dateColor}; background: ${dateBg}; padding: 0.2rem 0.4rem; border-radius: 4px; display: inline-block;">📅 ${dueDate.toLocaleDateString()}</div>`;
+                    }
+
+                    col.innerHTML += `
+                        <div style="background: var(--surface); padding: 0.75rem; border: 1px solid var(--border); border-radius: 0.4rem; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                            ${projBadge}
+                            <div style="font-weight: 600; font-size: 0.85rem; margin-bottom: 0.5rem; color: var(--text-main);">${t.title}</div>
+                            ${dateBadge}
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.75rem;">
+                                <select onchange="updateTaskStatus(${t.id}, this.value)" style="padding: 0.2rem; font-size: 0.75rem; border-radius: 0.25rem; border: 1px solid var(--border); background: var(--background); color: var(--text-muted); outline: none;">
+                                    <option value="TODO" ${t.status === 'TODO' ? 'selected' : ''}>TODO</option>
+                                    <option value="IN_PROGRESS" ${t.status === 'IN_PROGRESS' ? 'selected' : ''}>DOING</option>
+                                    <option value="DONE" ${t.status === 'DONE' ? 'selected' : ''}>DONE</option>
+                                </select>
+                                <button onclick="deleteTask(${t.id})" style="color: var(--danger); background: none; border: none; cursor: pointer; font-size: 0.9rem;" title="Delete Task">🗑️</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            } catch (e) { console.error("Error loading board", e); }
+        };
+
+        window.handleCreateProject = async function(e) {
+            const title = document.getElementById('newProjectTitle').value;
+            const desc = document.getElementById('newProjectDesc').value;
+            try {
+                const token = await auth.currentUser.getIdToken();
+                const res = await fetch("http://localhost:8000/projects", {
+                    method: "POST", headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+                    body: JSON.stringify({ title: title, description: desc })
+                });
+                if (!res.ok) throw new Error("Only Admins can create projects.");
+                document.getElementById('createProjectForm').reset();
+                window.loadProjectsAndTasks();
+            } catch (err) { alert(err.message); }
+        };
+
+        window.deleteProject = async function(id) {
+            if(!confirm("Delete this project? All associated tasks will be permanently deleted!")) return;
+            try {
+                const token = await auth.currentUser.getIdToken();
+                const res = await fetch(`http://localhost:8000/projects/${id}`, { method: "DELETE", headers: { "Authorization": `Bearer ${token}` } });
+                if (!res.ok) throw new Error("Only Admins can delete projects.");
+                window.loadProjectsAndTasks();
+            } catch (err) { alert(err.message); }
+        };
+
+        window.handleCreateTask = async function(e) {
+            const projId = document.getElementById('newTaskProject').value;
+            const title = document.getElementById('newTaskTitle').value;
+            const dueDate = document.getElementById('newTaskDueDate').value;
+            
+            if (!projId) { alert("Please select a project."); return; }
+
+            let formattedDate = null;
+            if (dueDate) formattedDate = new Date(dueDate).toISOString(); 
+
+            try {
+                const token = await auth.currentUser.getIdToken();
+                const res = await fetch(`http://localhost:8000/projects/${projId}/tasks`, {
+                    method: "POST", headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+                    body: JSON.stringify({ title: title, due_date: formattedDate, assignee_id: auth.currentUser.uid })
+                });
+                if (!res.ok) throw new Error("Only Admins can create tasks.");
+                
+                document.getElementById('createTaskForm').reset();
+                window.loadProjectsAndTasks();
+            } catch (err) { alert(err.message); }
+        };
+
+        window.updateTaskStatus = async function(taskId, newStatus) {
+            try {
+                const token = await auth.currentUser.getIdToken();
+                await fetch(`http://localhost:8000/tasks/${taskId}/status`, {
+                    method: "PUT", headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                window.loadProjectsAndTasks(); 
+            } catch (err) { alert("Failed to update status"); }
+        };
+
+        window.deleteTask = async function(id) {
+            if(!confirm("Permanently delete this task?")) return;
+            try {
+                const token = await auth.currentUser.getIdToken();
+                const res = await fetch(`http://localhost:8000/tasks/${id}`, { method: "DELETE", headers: { "Authorization": `Bearer ${token}` } });
+                if (!res.ok) throw new Error("Only Admins can delete tasks.");
+                window.loadProjectsAndTasks();
+            } catch (err) { alert(err.message); }
+        };
+
+        // --- NOTIFICATIONS LOGIC ---
+        window.toggleNotiDropdown = function() {
+            const drop = document.getElementById('notiDropdown');
+            drop.style.display = drop.style.display === 'none' ? 'block' : 'none';
+        };
+
+        window.fetchNotifications = async function() {
+            try {
+                const token = await auth.currentUser.getIdToken();
+                const res = await fetch("http://localhost:8000/notifications", { headers: { "Authorization": `Bearer ${token}` } });
+                const data = await res.json();
+                
+                const notiContent = document.getElementById('notiContent');
+                const badge = document.getElementById('notiBadge');
+                
+                let totalNotis = data.friend_requests.length + data.unread_messages.length;
+                
+                if (totalNotis > 0) {
+                    badge.style.display = 'flex';
+                    badge.innerText = totalNotis;
+                    let html = '';
+                    
+                    data.friend_requests.forEach(req => {
+                        html += `
+                        <div class="noti-item">
+                            <div style="font-size: 0.9rem;"><strong>@${req.user.username}</strong> sent you a friend request.</div>
+                            <div class="noti-actions">
+                                <button class="btn-small" style="background: var(--success); color: white;" onclick="respondToRequest(${req.connection_id}, 'accept')">Accept</button>
+                                <button class="btn-small" style="background: var(--danger); color: white;" onclick="respondToRequest(${req.connection_id}, 'reject')">Decline</button>
+                            </div>
+                        </div>`;
+                    });
+
+                    data.unread_messages.forEach(msg => {
+                        html += `
+                        <div class="noti-item" onclick="openChatFromNoti('${msg.sender_id}', '${msg.sender_name}')">
+                            <div style="font-size: 0.9rem;">💬 New message from <strong>@${msg.sender_name}</strong></div>
+                            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">"${msg.content}"</div>
+                        </div>`;
+                    });
+
+                    notiContent.innerHTML = html;
+                } else {
+                    badge.style.display = 'none';
+                    notiContent.innerHTML = '<div style="padding: 1.5rem; text-align: center; color: var(--text-muted); font-size: 0.9rem;">No new notifications</div>';
+                }
+            } catch (err) { console.error("Notification Error", err); }
+        };
+
+        window.respondToRequest = async function(connId, action) {
+            try {
+                const token = await auth.currentUser.getIdToken();
+                let url = `http://localhost:8000/connections/${connId}`;
+                let method = "DELETE";
+                if(action === 'accept') { url += "/accept"; method = "PUT"; }
+                await fetch(url, { method: method, headers: { "Authorization": `Bearer ${token}` } });
+                fetchNotifications(); 
+            } catch(e) { alert("Action failed"); }
+        };
+
+        window.openChatFromNoti = function(userId, userName) {
+            document.getElementById('notiDropdown').style.display = 'none';
+            window.switchView('messages');
+            window.openChat(userId, userName);
+        };
+
+
+        // --- TEAM SEARCH LOGIC ---
+        window.triggerUserSearch = function() {
+            const query = document.getElementById('userSearchInput').value;
+            window.loadTeamDirectory(query);
+        };
+
+        window.loadTeamDirectory = async function(searchQuery = "") {
+            const container = document.getElementById('teamDirectoryContainer');
+            container.innerHTML = 'Searching...';
+            try {
+                const token = await auth.currentUser.getIdToken();
+                const url = searchQuery ? `http://localhost:8000/users?search=${encodeURIComponent(searchQuery)}` : `http://localhost:8000/users`;
+                const response = await fetch(url, { headers: { "Authorization": `Bearer ${token}` } });
+                const users = await response.json();
+                
+                container.innerHTML = users.length === 0 ? 'No users found.' : ''; 
+                users.forEach(member => {
+                    const pUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=6366f1&color=fff`;
+                    container.innerHTML += `
+                        <div style="padding: 1rem; border: 1px solid var(--border); border-radius: 0.5rem; background: var(--surface); display: flex; align-items: center; justify-content: space-between;">
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <img src="${pUrl}" style="width: 45px; height: 45px; border-radius: 50%;">
+                                <div><h4 style="margin: 0;">${member.name}</h4><p style="margin: 0; font-size: 0.8rem; color: var(--text-muted);">@${member.username}</p></div>
+                            </div>
+                            <button onclick="sendConnectionRequest('${member.id}', this)" class="btn-save" style="margin:0; padding: 0.4rem 0.8rem;">+ Add</button>
+                        </div>`;
+                });
+            } catch (error) { container.innerHTML = 'Error loading users.'; }
+        };
+
+        window.sendConnectionRequest = async function(receiverId, btn) {
+            btn.innerText = "⏳";
+            try {
+                const token = await auth.currentUser.getIdToken();
+                const res = await fetch("http://localhost:8000/connections", { method: "POST", headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" }, body: JSON.stringify({ receiver_id: receiverId }) });
+                if (!res.ok) throw new Error("Request failed or already pending");
+                btn.innerText = "Sent ✓";
+                btn.style.background = "var(--success)";
+            } catch (error) { alert(error.message); btn.innerText = "+ Add"; }
+        };
+
+        // --- REAL-TIME MESSAGING LOGIC ---
+        window.loadChatFriends = async function() {
+            const list = document.getElementById('chatFriendsList');
+            try {
+                const token = await auth.currentUser.getIdToken();
+                const response = await fetch("http://localhost:8000/connections/friends", { headers: { "Authorization": `Bearer ${token}` } });
+                const friends = await response.json();
+                
+                list.innerHTML = friends.length === 0 ? '<p style="color: var(--text-muted); font-size: 0.9rem;">No friends yet.</p>' : '';
+                friends.forEach(f => {
+                    const pUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(f.user.name)}&background=6366f1&color=fff`;
+                    list.innerHTML += `
+                        <button class="chat-friend-btn" onclick="openChat('${f.user.id}', '${f.user.name}')">
+                            <img src="${pUrl}">
+                            <div style="color: var(--text-main);">
+                                <div style="font-weight: 600;">${f.user.name}</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">@${f.user.username}</div>
+                            </div>
+                        </button>
+                    `;
+                });
+            } catch (error) { list.innerHTML = "Failed to load friends."; }
+        };
+
+        window.openChat = async function(userId, userName) {
+            currentChatUserId = userId;
+            document.getElementById('chatActiveName').innerText = `Chatting with ${userName}`;
+            document.getElementById('chatMessageInput').disabled = false;
+            document.getElementById('chatSendBtn').disabled = false;
+            
+            try {
+                const token = await auth.currentUser.getIdToken();
+                await fetch(`http://localhost:8000/messages/read/${userId}`, { method: "PUT", headers: { "Authorization": `Bearer ${token}` } });
+                fetchNotifications(); 
+            } catch(e) {}
+
+            if(chatPollInterval) clearInterval(chatPollInterval);
+            fetchMessages();
+            chatPollInterval = setInterval(fetchMessages, 1500);
+        };
+
+        window.fetchMessages = async function() {
+            if (!currentChatUserId) return;
+            try {
+                const token = await auth.currentUser.getIdToken();
+                const response = await fetch(`http://localhost:8000/messages/${currentChatUserId}`, { headers: { "Authorization": `Bearer ${token}` } });
+                const messages = await response.json();
+                
+                let newHTML = '';
+                messages.forEach(msg => {
+                    const isMe = msg.sender_id === auth.currentUser.uid;
+                    const bubbleClass = isMe ? 'sent' : 'received';
+                    newHTML += `<div class="chat-bubble ${bubbleClass}">${msg.content}</div>`;
+                });
+                
+                const historyBox = document.getElementById('chatHistoryBox');
+                if (historyBox.innerHTML !== newHTML) {
+                    historyBox.innerHTML = newHTML;
+                    historyBox.scrollTop = historyBox.scrollHeight; 
+                }
+            } catch (err) { console.error("Poll error", err); }
+        };
+
+        window.handleEnter = function(e) { if (e.key === 'Enter') { e.preventDefault(); window.sendChatMessage(); } };
+
+        window.sendChatMessage = async function() {
+            const input = document.getElementById('chatMessageInput');
+            const text = input.value.trim();
+            if (!text || !currentChatUserId) return;
+            input.value = ''; 
+            try {
+                const token = await auth.currentUser.getIdToken();
+                await fetch("http://localhost:8000/messages", { method: "POST", headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" }, body: JSON.stringify({ receiver_id: currentChatUserId, content: text }) });
+                fetchMessages(); 
+            } catch (error) { alert("Failed to send message."); }
+        };
+
+        // --- PROFILE SAVING ---
+        window.saveProfileInfo = async function(event) {
+            const btn = document.getElementById('saveProfileBtn');
+            const firstName = document.getElementById('inputFirstName').value;
+            const lastName = document.getElementById('inputLastName').value;
+            const newUsername = document.getElementById('inputUsername').value;
+            const newFullName = (firstName + " " + lastName).trim();
+
+            btn.innerText = "Saving...";
+            try {
+                const token = await auth.currentUser.getIdToken();
+                await fetch("http://localhost:8000/users/me/username", { method: "PUT", headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" }, body: JSON.stringify({ username: newUsername }) });
+                await updateProfile(auth.currentUser, { displayName: newFullName });
+                alert("Saved!");
+            } catch (err) { alert(err.message); } finally { btn.innerText = "Save Changes"; }
+        };
+
+        window.updateProfileImage = async function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            try {
+                const token = await auth.currentUser.getIdToken();
+                const formData = new FormData(); formData.append("file", file);
+                const res = await fetch("http://localhost:8000/users/me/avatar", { method: "POST", headers: { "Authorization": `Bearer ${token}` }, body: formData });
+                const data = await res.json();
+                await updateProfile(auth.currentUser, { photoURL: data.avatar_url });
+                document.getElementById('profileAvatarMain').src = data.avatar_url;
+                document.getElementById('headerAvatar').src = data.avatar_url;
+            } catch (err) { alert("Upload failed."); }
+        };
+
+        window.handleLogout = function(e) { e.preventDefault(); signOut(auth); };
+    </script>
+</body>
+</html>
